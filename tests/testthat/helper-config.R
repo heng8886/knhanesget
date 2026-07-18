@@ -1,8 +1,12 @@
 local_knhanesget_config <- function() {
   path <- tempfile("knhanesget-config-")
   dir.create(path)
-  withr::local_options(knhanesget.config_dir_test = path)
-  withr::defer(unlink(path, recursive = TRUE), envir = parent.frame())
+  test_env <- parent.frame()
+  withr::local_options(
+    knhanesget.config_dir_test = path,
+    .local_envir = test_env
+  )
+  withr::defer(unlink(path, recursive = TRUE), envir = test_env)
   path
 }
 
