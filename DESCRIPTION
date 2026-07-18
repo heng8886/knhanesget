@@ -1,6 +1,6 @@
 Package: knhanesget
 Title: 安装和更新 knhanes
-Version: 0.1.0.1
+Version: 0.1.0.2
 Authors@R:
     person(given = "Heng", family = "Liu", role = c("aut", "cre"),
            email = "lh1399780@163.com")

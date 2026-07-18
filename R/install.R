@@ -1,12 +1,13 @@
 #' 安装或更新 knhanes
 #'
 #' 从维护者发布仓库下载指定knhanes版本，验证SHA-256与Ed25519发布签名后安装。
-#' 首次安装可同时提供`KNHLIC2`授权码完成激活；老用户更新时无需重复输入授权码。
+#' 首次安装可同时提供`KNHLIC3`授权码完成激活；老用户更新时无需重复输入授权码。
 #'
-#' @param license_code 首次激活使用的完整knhanes授权码，通常以`KNHLIC2.`开头。
+#' @param license_code 首次激活使用的完整knhanes授权码，新版通常以`KNHLIC3.`开头。
+#'   旧`KNHLIC1.`和`KNHLIC2.`授权码仍可使用。
 #'   已激活用户更新时设为`NULL`即可。
 #' @param version 要安装的版本。默认`"latest"`安装最新正式Release；也可指定
-#'   如`"0.1.0.3"`或`"v0.1.0.3"`。
+#'   如`"0.1.0.4"`或`"v0.1.0.4"`。
 #' @param force 逻辑值。若为`TRUE`，即使同版本已经安装也重新安装。
 #' @param quiet 逻辑值。是否减少下载和安装过程输出。
 #' @param lib 安装R包的库目录。默认使用`.libPaths()`中的第一个目录。
@@ -22,7 +23,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' install_knhanes(license_code = "KNHLIC2.<payload>.<signature>")
+#' install_knhanes(license_code = "KNHLIC3.<payload>.<signature>")
 #' install_knhanes()
 #' }
 install_knhanes <- function(license_code = NULL,

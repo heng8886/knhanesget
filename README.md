@@ -18,11 +18,11 @@ getToken()
 ```
 
 将控制台显示的完整`KNHREQ2`申请码和姓名发送给维护者。
-邮箱：`henry88866@163.com`。收到维护者签发的`KNHLIC2`授权码后运行：
+邮箱：`henry88866@163.com`。收到维护者签发的`KNHLIC3`授权码后运行：
 
 ```r
 install_knhanes(
-  license_code = "KNHLIC2.<payload>.<signature>"
+  license_code = "KNHLIC3.<payload>.<signature>"
 )
 ```
 
@@ -43,7 +43,7 @@ knhanesget::install_knhanes()
 安装固定版本：
 
 ```r
-knhanesget::install_knhanes(version = "0.1.0.3")
+knhanesget::install_knhanes(version = "0.1.0.4")
 ```
 
 ## 状态与版本

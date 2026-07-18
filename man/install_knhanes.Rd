@@ -13,11 +13,12 @@ install_knhanes(
 )
 }
 \arguments{
-\item{license_code}{首次激活使用的完整knhanes授权码，通常以\code{KNHLIC2.}开头。
+\item{license_code}{首次激活使用的完整knhanes授权码，新版通常以\code{KNHLIC3.}开头。
+旧\code{KNHLIC1.}和\code{KNHLIC2.}授权码仍可使用。
 已激活用户更新时设为\code{NULL}即可。}
 
 \item{version}{要安装的版本。默认\code{"latest"}安装最新正式Release；也可指定
-如\code{"0.1.0.3"}或\code{"v0.1.0.3"}。}
+如\code{"0.1.0.4"}或\code{"v0.1.0.4"}。}
 
 \item{force}{逻辑值。若为\code{TRUE}，即使同版本已经安装也重新安装。}
 
@@ -30,7 +31,7 @@ install_knhanes(
 }
 \description{
 从维护者发布仓库下载指定knhanes版本，验证SHA-256与Ed25519发布签名后安装。
-首次安装可同时提供\code{KNHLIC2}授权码完成激活；老用户更新时无需重复输入授权码。
+首次安装可同时提供\code{KNHLIC3}授权码完成激活；老用户更新时无需重复输入授权码。
 }
 \details{
 发布包、校验文件和签名来自\code{heng8886/knhanes-dist}的版本化GitHub Release。
@@ -40,7 +41,7 @@ install_knhanes(
 }
 \examples{
 \dontrun{
-install_knhanes(license_code = "KNHLIC2.<payload>.<signature>")
+install_knhanes(license_code = "KNHLIC3.<payload>.<signature>")
 install_knhanes()
 }
 }

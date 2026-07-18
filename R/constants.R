@@ -2,7 +2,7 @@
 .kng_contact <- "henry88866@163.com"
 .kng_dist_owner <- "heng8886"
 .kng_dist_repo <- "knhanes-dist"
-.kng_fallback_version <- "0.1.0.3"
+.kng_fallback_version <- "0.1.0.4"
 .kng_release_public_key_hex <- paste0(
   "707493cd033160cc5245f52379032463",
   "715ccdd4adc115b513f6d8fb796ee02c"
@@ -119,6 +119,7 @@ kng_local_username <- function() {
 
 kng_base64url_encode <- function(raw) {
   value <- jsonlite::base64_enc(raw)
+  value <- gsub("[\r\n]", "", value)
   value <- chartr("+/", "-_", value)
   sub("=+$", "", value)
 }

@@ -28,11 +28,11 @@ test_that("archive verification accepts matching signed assets", {
 
 test_that("release metadata requires all signed assets", {
   fake_release <- list(
-    tag_name = "v0.1.0.3",
+    tag_name = "v0.1.0.4",
     html_url = "https://example.test/release",
     assets = list(
       list(
-        name = "knhanes_0.1.0.3.tar.gz",
+        name = "knhanes_0.1.0.4.tar.gz",
         browser_download_url = "https://example.test/archive"
       )
     )
@@ -48,7 +48,7 @@ test_that("release metadata requires all signed assets", {
 })
 
 test_that("release metadata resolves asset URLs", {
-  version <- "0.1.0.3"
+  version <- "0.1.0.4"
   base <- paste0("knhanes_", version, ".tar.gz")
   fake_release <- list(
     tag_name = paste0("v", version),
@@ -66,6 +66,6 @@ test_that("release metadata resolves asset URLs", {
   )
   result <- knhanesget:::kng_release_metadata("latest")
   expect_identical(result$version, version)
-  expect_identical(result$tag, "v0.1.0.3")
+  expect_identical(result$tag, "v0.1.0.4")
   expect_true(endsWith(result$signature_url, ".sig"))
 })

@@ -15,7 +15,7 @@ test_that("deactivate_device requires confirmation", {
 
 test_that("deactivate_device removes requested local state", {
   local_knhanesget_config()
-  getToken(version = "0.1.0.3", quiet = TRUE)
+  getToken(version = "0.1.0.4", quiet = TRUE)
   writeLines("test-license", knhanesget:::kng_license_path())
 
   result <- deactivate_device(confirm = TRUE)
