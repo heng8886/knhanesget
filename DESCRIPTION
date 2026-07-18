@@ -1,0 +1,27 @@
+Package: knhanesget
+Title: 安装和更新 knhanes
+Version: 0.1.0.0
+Authors@R:
+    person(given = "Heng", family = "Liu", role = c("aut", "cre"),
+           email = "lh1399780@163.com")
+Description: Provides a lightweight public installer for knhanes. It creates
+    a random installation request code compatible with knhanes, downloads and
+    verifies versioned release archives, and supports activation, version
+    checks, updates, and local deactivation. It contains no KNHANES data,
+    knhanes analysis code, GitHub access token, or private signing key.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1)
+Imports:
+    curl,
+    jsonlite,
+    sodium,
+    tibble
+Suggests:
+    knhanes,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
