@@ -22,6 +22,8 @@ jobs:
           use-public-rspm: true
       - name: Install knhanesget and knhanes into an isolated library
         shell: Rscript {0}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           lib <- file.path(tempdir(), "knhanes-smoke-library")
           dir.create(lib, recursive = TRUE)

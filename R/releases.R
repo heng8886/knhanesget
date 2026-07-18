@@ -6,10 +6,25 @@ kng_github_api <- function(path) {
   paste0(sub("/$", "", base), path)
 }
 
+kng_github_headers <- function() {
+  headers <- c(
+    Accept = "application/vnd.github+json",
+    `X-GitHub-Api-Version` = "2022-11-28"
+  )
+  token <- Sys.getenv("GITHUB_TOKEN", unset = "")
+  if (!nzchar(token)) {
+    token <- Sys.getenv("GH_TOKEN", unset = "")
+  }
+  if (nzchar(token)) {
+    headers <- c(headers, Authorization = paste("Bearer", token))
+  }
+  headers
+}
+
 kng_fetch_json <- function(url) {
   handle <- curl::new_handle(
     useragent = paste0("knhanesget/", utils::packageVersion("knhanesget")),
-    httpheader = c(Accept = "application/vnd.github+json")
+    httpheader = kng_github_headers()
   )
   response <- curl::curl_fetch_memory(url, handle = handle)
   if (response$status_code != 200L) {

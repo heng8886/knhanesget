@@ -69,3 +69,20 @@ test_that("release metadata resolves asset URLs", {
   expect_identical(result$tag, "v0.1.0.4")
   expect_true(endsWith(result$signature_url, ".sig"))
 })
+
+test_that("GitHub metadata headers use an optional environment token", {
+  withr::local_envvar(c(GITHUB_TOKEN = NA, GH_TOKEN = NA))
+  anonymous <- knhanesget:::kng_github_headers()
+  expect_false("Authorization" %in% names(anonymous))
+  expect_identical(
+    unname(anonymous[["X-GitHub-Api-Version"]]),
+    "2022-11-28"
+  )
+
+  withr::local_envvar(GITHUB_TOKEN = "test-actions-token")
+  authenticated <- knhanesget:::kng_github_headers()
+  expect_identical(
+    unname(authenticated[["Authorization"]]),
+    "Bearer test-actions-token"
+  )
+})
