@@ -14,7 +14,10 @@
 #'
 #' @details
 #' 发布包、校验文件和签名来自`heng8886/knhanes-dist`的版本化GitHub Release。
-#' 本函数不需要GitHub账号或PAT。校验通过后才调用[utils::install.packages()]。
+#' 本函数不需要GitHub账号或PAT。校验通过后会读取发布包的`DESCRIPTION`，
+#' 使用当前CRAN镜像自动安装尚未安装的`Depends`、`Imports`和`LinkingTo`依赖，
+#' 然后才安装knhanes；若当前未配置CRAN镜像，则使用
+#' `https://cloud.r-project.org`。因此Windows和macOS用户通常无需预先手工安装依赖。
 #' 授权保存在R用户配置目录，正常更新不会删除。若knhanes已经在当前R会话加载，
 #' 更新后建议重启R再使用新版本。
 #'
@@ -69,6 +72,15 @@ install_knhanes <- function(license_code = NULL,
         " archive verified (SHA-256 and Ed25519 signature)."
       )
     }
+    dependencies <- kng_archive_dependencies(
+      archive,
+      file.path(work, "archive-description")
+    )
+    kng_install_missing_dependencies(
+      dependencies,
+      lib = lib,
+      quiet = quiet
+    )
     utils::install.packages(
       archive,
       repos = NULL,
@@ -112,4 +124,83 @@ install_knhanes <- function(license_code = NULL,
     message("Restart R before using the updated knhanes version.")
   }
   invisible(status)
+}
+
+kng_dependency_names <- function(fields) {
+  fields <- fields[!is.na(fields)]
+  if (!length(fields)) {
+    return(character())
+  }
+  entries <- unlist(strsplit(paste(fields, collapse = ","), ",", fixed = TRUE))
+  entries <- trimws(sub("\\s*\\([^)]*\\)\\s*$", "", entries))
+  unique(entries[nzchar(entries) & entries != "R"])
+}
+
+kng_archive_dependencies <- function(archive, exdir) {
+  members <- utils::untar(archive, list = TRUE)
+  description <- grep("^[^/]+/DESCRIPTION$", members, value = TRUE)
+  if (length(description) != 1L) {
+    stop(
+      "The verified knhanes archive does not contain exactly one package DESCRIPTION.",
+      call. = FALSE
+    )
+  }
+  dir.create(exdir, recursive = TRUE, showWarnings = FALSE)
+  utils::untar(archive, files = description, exdir = exdir)
+  dcf <- read.dcf(
+    file.path(exdir, description),
+    fields = c("Depends", "Imports", "LinkingTo")
+  )
+  kng_dependency_names(as.character(dcf[1L, ]))
+}
+
+kng_cran_repositories <- function() {
+  repos <- getOption("repos")
+  if (is.null(repos) || !length(repos)) {
+    return(c(CRAN = "https://cloud.r-project.org"))
+  }
+  repos <- repos[!is.na(repos) & nzchar(repos)]
+  if (!length(repos)) {
+    return(c(CRAN = "https://cloud.r-project.org"))
+  }
+  cran <- match("CRAN", names(repos))
+  if (is.na(cran)) {
+    repos <- c(CRAN = "https://cloud.r-project.org", repos)
+  } else if (identical(unname(repos[[cran]]), "@CRAN@")) {
+    repos[[cran]] <- "https://cloud.r-project.org"
+  }
+  repos
+}
+
+kng_installed_package_names <- function(lib) {
+  libraries <- unique(c(lib, .libPaths()))
+  libraries <- libraries[dir.exists(libraries)]
+  rownames(utils::installed.packages(lib.loc = libraries))
+}
+
+kng_install_missing_dependencies <- function(packages, lib, quiet = FALSE) {
+  missing <- setdiff(packages, kng_installed_package_names(lib))
+  if (!length(missing)) {
+    return(invisible(character()))
+  }
+  if (!quiet) {
+    message("Installing missing knhanes dependencies: ", paste(missing, collapse = ", "))
+  }
+  utils::install.packages(
+    missing,
+    repos = kng_cran_repositories(),
+    lib = lib,
+    dependencies = c("Depends", "Imports", "LinkingTo"),
+    quiet = quiet
+  )
+  unresolved <- setdiff(missing, kng_installed_package_names(lib))
+  if (length(unresolved)) {
+    stop(
+      "Unable to install required knhanes dependencies: ",
+      paste(unresolved, collapse = ", "),
+      ". Check the CRAN repository and network connection, then retry.",
+      call. = FALSE
+    )
+  }
+  invisible(missing)
 }

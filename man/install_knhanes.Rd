@@ -35,7 +35,10 @@ install_knhanes(
 }
 \details{
 发布包、校验文件和签名来自\code{heng8886/knhanes-dist}的版本化GitHub Release。
-本函数不需要GitHub账号或PAT。校验通过后才调用\code{\link[utils:install.packages]{utils::install.packages()}}。
+本函数不需要GitHub账号或PAT。校验通过后会读取发布包的\code{DESCRIPTION}，
+使用当前CRAN镜像自动安装尚未安装的\code{Depends}、\code{Imports}和\code{LinkingTo}依赖，
+然后才安装knhanes；若当前未配置CRAN镜像，则使用
+\verb{https://cloud.r-project.org}。因此Windows和macOS用户通常无需预先手工安装依赖。
 授权保存在R用户配置目录，正常更新不会删除。若knhanes已经在当前R会话加载，
 更新后建议重启R再使用新版本。
 }
