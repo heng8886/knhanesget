@@ -8,5 +8,10 @@ local_knhanesget_config <- function() {
 
 decode_request_body <- function(code) {
   parts <- strsplit(code, ".", fixed = TRUE)[[1L]]
-  rawToChar(sodium::hex2bin(parts[[2L]]))
+  value <- chartr("-_", "+/", parts[[2L]])
+  padding <- (4L - nchar(value) %% 4L) %% 4L
+  if (padding > 0L) {
+    value <- paste0(value, strrep("=", padding))
+  }
+  jsonlite::base64_dec(value)
 }

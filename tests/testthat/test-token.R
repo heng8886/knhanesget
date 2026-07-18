@@ -1,23 +1,35 @@
-test_that("getToken creates a stable compatible request", {
+test_that("getToken creates a stable compact compatible request", {
   local_knhanesget_config()
+  withr::local_options(knhanesget.username_test = "henry")
   first <- getToken(version = "0.1.0.3", quiet = TRUE)
   second <- getToken(version = "0.1.0.3", quiet = TRUE)
 
   expect_identical(first, second)
-  expect_match(first, "^KNHREQ1\\.[0-9a-f]+\\.[0-9a-f]{16}$")
+  expect_match(first, "^KNHREQ2\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{8}$")
+  expect_lt(nchar(first), 80L)
   body <- decode_request_body(first)
-  fields <- strsplit(body, "|", fixed = TRUE)[[1L]]
-  expect_identical(fields[[1L]], "knhanes")
-  expect_match(fields[[2L]], "^[0-9a-f]{32}$")
-  expect_identical(fields[[3L]], "0.1.0.3")
+  expect_length(body, 16L + nchar("0.1.0.3\nhenry"))
+  expect_match(sodium::bin2hex(body[seq_len(16L)]), "^[0-9a-f]{32}$")
+  expect_identical(rawToChar(body[-seq_len(16L)]), "0.1.0.3\nhenry")
   expect_true(file.exists(knhanesget:::kng_installation_path()))
 })
 
-test_that("getToken does not expose local hardware labels", {
+test_that("getToken includes username but not hostname", {
   local_knhanesget_config()
+  withr::local_options(knhanesget.username_test = "test-user")
   body <- decode_request_body(getToken(version = "0.1.0.3", quiet = TRUE))
-  expect_false(grepl(Sys.info()[["nodename"]], body, fixed = TRUE))
-  expect_false(grepl(Sys.info()[["user"]], body, fixed = TRUE))
+  metadata <- rawToChar(body[-seq_len(16L)])
+  expect_match(metadata, "test-user", fixed = TRUE)
+  expect_false(grepl(Sys.info()[["nodename"]], metadata, fixed = TRUE))
+})
+
+test_that("getToken prints the current contact instructions", {
+  local_knhanesget_config()
+  withr::local_options(knhanesget.username_test = "henry")
+  output <- capture.output(getToken(version = "0.1.0.3"))
+  expect_true(any(grepl("请将完整申请码和姓名发送给我。", output, fixed = TRUE)))
+  expect_true(any(grepl("邮箱：henry88866@163.com", output, fixed = TRUE)))
+  expect_false(any(grepl("install_knhanes", output, fixed = TRUE)))
 })
 
 test_that("getToken validates arguments", {

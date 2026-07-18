@@ -1,7 +1,7 @@
 #' 生成 knhanes 安装授权申请码
 #'
-#' 在安装knhanes之前生成与其授权系统完全兼容的`KNHREQ1`申请码。申请码使用
-#' 随机安装实例ID，不读取CPU、BIOS、MAC地址、主机名或用户名。
+#' 在安装knhanes之前生成与其授权系统完全兼容的`KNHREQ2`申请码。申请码使用
+#' 随机安装实例ID，并记录操作系统当前用户名；不读取CPU、BIOS、MAC地址或主机名。
 #'
 #' @param version 申请安装的knhanes版本。若为`NULL`，优先使用已安装版本；若尚未
 #'   安装，则尝试读取最新GitHub Release，网络不可用时回退到辅助包内置兼容版本。
@@ -10,10 +10,12 @@
 #'
 #' @details
 #' 随机安装ID保存在R用户级knhanes配置目录。正常更新或重装R包不会改变该ID，
-#' 因此已签发授权可以继续使用。申请码只包含包名、随机安装ID、目标版本和校验值，
-#' 不包含KNHANES数据、GitHub令牌或授权私钥。
+#' 因此已签发授权可以继续使用。申请码只包含随机安装ID、目标版本、当前用户名和
+#' 校验值，不包含KNHANES数据、GitHub令牌或授权私钥。`KNHREQ2`使用URL安全
+#' Base64编码和紧凑二进制安装ID，比旧`KNHREQ1`十六进制格式更短。用户名仅用于
+#' 帮助维护者识别申请设备，不参与授权绑定。
 #'
-#' @return 隐式返回以`KNHREQ1.`开头的申请码字符串。
+#' @return 隐式返回以`KNHREQ2.`开头的申请码字符串。
 #' @export
 #'
 #' @examples
@@ -32,15 +34,14 @@ getToken <- function(version = NULL, quiet = FALSE) {
     }
   }
   version <- kng_normalize_version(version)
-  body <- paste(.kng_package, kng_installation_id(), version, sep = "|")
-  checksum <- substr(
-    sodium::bin2hex(sodium::sha256(charToRaw(body))),
-    1L,
-    16L
+  body <- c(
+    sodium::hex2bin(kng_installation_id()),
+    charToRaw(paste0(version, "\n", kng_local_username()))
   )
+  checksum <- kng_base64url_encode(sodium::sha256(body)[seq_len(6L)])
   code <- paste(
-    "KNHREQ1",
-    sodium::bin2hex(charToRaw(body)),
+    "KNHREQ2",
+    kng_base64url_encode(body),
     checksum,
     sep = "."
   )
@@ -48,10 +49,8 @@ getToken <- function(version = NULL, quiet = FALSE) {
     cat(
       "knhanes \u6388\u6743\u7533\u8bf7\u7801\uff1a\n",
       code,
-      "\n\n\u8bf7\u5c06\u5b8c\u6574\u7533\u8bf7\u7801\u548c\u59d3\u540d\u53d1\u9001\u81f3 ",
-      .kng_contact,
-      "\u3002\n\u6536\u5230 KNHLIC2 \u6388\u6743\u7801\u540e\uff0c\u8fd0\u884c ",
-      "install_knhanes(license_code = \"\u6388\u6743\u7801\")\u3002\n",
+      "\n\n\u8bf7\u5c06\u5b8c\u6574\u7533\u8bf7\u7801\u548c\u59d3\u540d\u53d1\u9001\u7ed9\u6211\u3002",
+      "\n\u90ae\u7bb1\uff1a", .kng_contact, "\n",
       sep = ""
     )
   }

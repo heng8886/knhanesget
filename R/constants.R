@@ -1,5 +1,5 @@
 .kng_package <- "knhanes"
-.kng_contact <- "lh1399780@163.com"
+.kng_contact <- "henry88866@163.com"
 .kng_dist_owner <- "heng8886"
 .kng_dist_repo <- "knhanes-dist"
 .kng_fallback_version <- "0.1.0.3"
@@ -89,6 +89,38 @@ kng_installation_id <- function() {
   value <- sodium::bin2hex(sodium::random(16L))
   kng_write_private_file(value, path)
   value
+}
+
+kng_local_username <- function() {
+  test_username <- getOption("knhanesget.username_test", NULL)
+  if (identical(Sys.getenv("TESTTHAT"), "true") &&
+      is.character(test_username) && length(test_username) == 1L &&
+      !is.na(test_username)) {
+    username <- test_username
+  } else {
+    username <- unname(Sys.info()[["user"]])
+    if (length(username) != 1L || is.na(username) || !nzchar(username)) {
+      username <- Sys.getenv("USERNAME", unset = "")
+    }
+    if (!nzchar(username)) {
+      username <- Sys.getenv("USER", unset = "")
+    }
+  }
+  username <- enc2utf8(trimws(username))
+  username <- gsub("[[:cntrl:]]+", "_", username)
+  if (!nzchar(username)) {
+    username <- "unknown"
+  }
+  while (nchar(username, type = "bytes") > 100L) {
+    username <- substr(username, 1L, nchar(username) - 1L)
+  }
+  username
+}
+
+kng_base64url_encode <- function(raw) {
+  value <- jsonlite::base64_enc(raw)
+  value <- chartr("+/", "-_", value)
+  sub("=+$", "", value)
 }
 
 kng_installed_version <- function(lib = NULL) {
