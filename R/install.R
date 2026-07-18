@@ -18,8 +18,9 @@
 #' 使用当前CRAN镜像自动安装尚未安装的`Depends`、`Imports`和`LinkingTo`依赖，
 #' 然后才安装knhanes；若当前未配置CRAN镜像，则使用
 #' `https://cloud.r-project.org`。因此Windows和macOS用户通常无需预先手工安装依赖。
-#' 授权保存在R用户配置目录，正常更新不会删除。若knhanes已经在当前R会话加载，
-#' 更新后建议重启R再使用新版本。
+#' 授权保存在R用户配置目录，正常更新不会删除。更新前会自动尝试卸载当前R会话中
+#' 已附加或仅加载namespace的knhanes；若其他包仍依赖该namespace而无法安全卸载，
+#' 函数会在安装前停止，并提示重启R后直接重新运行本函数。
 #'
 #' @return 隐式返回[license_status()]的一行tibble。
 #' @export
@@ -56,6 +57,7 @@ install_knhanes <- function(license_code = NULL,
     !identical(installed_before, release$version)
 
   if (needs_install) {
+    kng_prepare_package_update("knhanes", quiet = quiet)
     work <- tempfile("knhanesget-release-")
     dir.create(work)
     on.exit(unlink(work, recursive = TRUE), add = TRUE)
@@ -121,9 +123,78 @@ install_knhanes <- function(license_code = NULL,
     )
   }
   if (was_loaded && needs_install && !quiet) {
-    message("Restart R before using the updated knhanes version.")
+    message(
+      "The previous knhanes package was unloaded before updating. ",
+      "Run library(knhanes) to attach the updated version."
+    )
   }
   invisible(status)
+}
+
+kng_package_attached <- function(package) {
+  paste0("package:", package) %in% search()
+}
+
+kng_namespace_loaded <- function(package) {
+  isNamespaceLoaded(package)
+}
+
+kng_detach_package <- function(package) {
+  detach(
+    paste0("package:", package),
+    unload = TRUE,
+    character.only = TRUE
+  )
+}
+
+kng_unload_namespace <- function(package) {
+  unloadNamespace(package)
+}
+
+kng_prepare_package_update <- function(package, quiet = FALSE) {
+  attached <- kng_package_attached(package)
+  loaded <- kng_namespace_loaded(package)
+  if (!attached && !loaded) {
+    return(invisible(FALSE))
+  }
+
+  errors <- character()
+  if (attached) {
+    tryCatch(
+      kng_detach_package(package),
+      error = function(e) {
+        errors <<- c(errors, conditionMessage(e))
+      }
+    )
+  }
+  if (kng_namespace_loaded(package)) {
+    tryCatch(
+      kng_unload_namespace(package),
+      error = function(e) {
+        errors <<- c(errors, conditionMessage(e))
+      }
+    )
+  }
+
+  if (kng_package_attached(package) || kng_namespace_loaded(package)) {
+    detail <- if (length(errors)) {
+      paste0(" Details: ", paste(unique(errors), collapse = "; "))
+    } else {
+      ""
+    }
+    stop(
+      "The installed package '", package,
+      "' is currently in use and cannot be updated safely. ",
+      "Restart R, do not run library(", package, "), then rerun ",
+      "knhanesget::install_knhanes().",
+      detail,
+      call. = FALSE
+    )
+  }
+  if (!quiet) {
+    message("Unloaded the active ", package, " package before updating.")
+  }
+  invisible(TRUE)
 }
 
 kng_dependency_names <- function(fields) {

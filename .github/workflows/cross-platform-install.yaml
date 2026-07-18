@@ -35,12 +35,22 @@ jobs:
           stopifnot(!any(c("dplyr", "readr", "survey") %in%
             rownames(installed.packages(lib.loc = lib))))
           installer <- getExportedValue("knhanesget", "install_knhanes")
-          installer(version = "0.1.0.4", force = TRUE, lib = lib)
+          installer(version = "0.1.0.8", force = TRUE, lib = lib)
           stopifnot(
             identical(
               as.character(packageVersion("knhanes", lib.loc = lib)),
-              "0.1.0.4"
+              "0.1.0.8"
             ),
             all(c("dplyr", "readr", "survey") %in%
               rownames(installed.packages(lib.loc = .libPaths())))
+          )
+          library("knhanes", character.only = TRUE, lib.loc = lib)
+          stopifnot("package:knhanes" %in% search())
+          installer(version = "0.1.0.8", force = TRUE, lib = lib)
+          stopifnot(
+            !"package:knhanes" %in% search(),
+            identical(
+              as.character(packageVersion("knhanes", lib.loc = lib)),
+              "0.1.0.8"
+            )
           )

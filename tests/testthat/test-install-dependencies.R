@@ -71,3 +71,65 @@ test_that("invalid archives fail before dependency installation", {
     fixed = TRUE
   )
 })
+
+test_that("package update preparation is a no-op when knhanes is not loaded", {
+  testthat::local_mocked_bindings(
+    kng_package_attached = function(package) FALSE,
+    kng_namespace_loaded = function(package) FALSE,
+    .package = "knhanesget"
+  )
+
+  expect_false(knhanesget:::kng_prepare_package_update("knhanes", quiet = TRUE))
+})
+
+test_that("package update preparation detaches an attached knhanes", {
+  attached <- TRUE
+  loaded <- TRUE
+  testthat::local_mocked_bindings(
+    kng_package_attached = function(package) attached,
+    kng_namespace_loaded = function(package) loaded,
+    kng_detach_package = function(package) {
+      attached <<- FALSE
+      loaded <<- FALSE
+    },
+    kng_unload_namespace = function(package) {
+      loaded <<- FALSE
+    },
+    .package = "knhanesget"
+  )
+
+  expect_true(knhanesget:::kng_prepare_package_update("knhanes", quiet = TRUE))
+  expect_false(attached)
+  expect_false(loaded)
+})
+
+test_that("package update preparation unloads a namespace-only knhanes", {
+  loaded <- TRUE
+  testthat::local_mocked_bindings(
+    kng_package_attached = function(package) FALSE,
+    kng_namespace_loaded = function(package) loaded,
+    kng_unload_namespace = function(package) {
+      loaded <<- FALSE
+    },
+    .package = "knhanesget"
+  )
+
+  expect_true(knhanesget:::kng_prepare_package_update("knhanes", quiet = TRUE))
+  expect_false(loaded)
+})
+
+test_that("locked package update requests a clean R restart before download", {
+  testthat::local_mocked_bindings(
+    kng_package_attached = function(package) TRUE,
+    kng_namespace_loaded = function(package) TRUE,
+    kng_detach_package = function(package) stop("detach blocked"),
+    kng_unload_namespace = function(package) stop("namespace imported"),
+    .package = "knhanesget"
+  )
+
+  expect_error(
+    knhanesget:::kng_prepare_package_update("knhanes", quiet = TRUE),
+    "Restart R, do not run library(knhanes)",
+    fixed = TRUE
+  )
+})

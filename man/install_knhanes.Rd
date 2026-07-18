@@ -39,8 +39,9 @@ install_knhanes(
 使用当前CRAN镜像自动安装尚未安装的\code{Depends}、\code{Imports}和\code{LinkingTo}依赖，
 然后才安装knhanes；若当前未配置CRAN镜像，则使用
 \verb{https://cloud.r-project.org}。因此Windows和macOS用户通常无需预先手工安装依赖。
-授权保存在R用户配置目录，正常更新不会删除。若knhanes已经在当前R会话加载，
-更新后建议重启R再使用新版本。
+授权保存在R用户配置目录，正常更新不会删除。更新前会自动尝试卸载当前R会话中
+已附加或仅加载namespace的knhanes；若其他包仍依赖该namespace而无法安全卸载，
+函数会在安装前停止，并提示重启R后直接重新运行本函数。
 }
 \examples{
 \dontrun{
