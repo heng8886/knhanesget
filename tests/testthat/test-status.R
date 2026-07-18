@@ -30,4 +30,3 @@ test_that("deactivate_device removes requested local state", {
   expect_true(result$Installation_ID_reset[[1L]])
   expect_false(file.exists(knhanesget:::kng_installation_path()))
 })
-

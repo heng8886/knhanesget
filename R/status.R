@@ -121,4 +121,3 @@ deactivate_device <- function(confirm = FALSE,
   }
   invisible(result)
 }
-

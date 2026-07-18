@@ -25,4 +25,3 @@ test_that("getToken validates arguments", {
   expect_error(getToken(version = "latest", quiet = TRUE), "dot-separated")
   expect_error(getToken(version = "0.1.0.3", quiet = NA), "TRUE or FALSE")
 })
-
