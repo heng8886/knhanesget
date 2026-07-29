@@ -1,4 +1,4 @@
-name: Cross-platform installation
+name: Cross-platform checks
 
 on:
   push:
@@ -6,66 +6,119 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: knhanesget-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  clean-library-install:
-    name: ${{ matrix.os }} / R release
+  package-check:
+    name: ${{ matrix.os }} / R ${{ matrix.r }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            r: release
+          - os: macos-latest
+            r: release
+          - os: windows-latest
+            r: release
+          - os: ubuntu-latest
+            r: "4.1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-r@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
+        with:
+          extra-packages: any::rcmdcheck, any::testthat, any::withr
+          dependencies: '"hard"'
+          install-pandoc: false
+          install-quarto: false
+      - name: Run R CMD check
+        shell: Rscript {0}
+        run: |
+          rcmdcheck::rcmdcheck(
+            args = "--no-manual",
+            error_on = "warning",
+            check_dir = "check"
+          )
+
+  server-contract:
+    name: Official server contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
         with:
           r-version: release
           use-public-rspm: true
-      - name: Install knhanesget and knhanes into an isolated library
-        shell: Rscript {0}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
+        with:
+          dependencies: '"hard"'
+          install-pandoc: false
+          install-quarto: false
+      - name: Verify server-only source tree
+        shell: bash
         run: |
-          lib <- file.path(tempdir(), "knhanes-smoke-library")
-          dir.create(lib, recursive = TRUE)
-          .libPaths(c(lib, .Library))
-          install.packages(
-            c("curl", "jsonlite", "sodium", "tibble"),
-            repos = "https://cloud.r-project.org",
-            lib = lib
-          )
-          install.packages(".", repos = NULL, type = "source", lib = lib)
-          stopifnot(!any(c("dplyr", "readr", "survey") %in%
-            rownames(installed.packages(lib.loc = lib))))
-          version_info <- getExportedValue(
-            "knhanesget",
-            "knhanes_version"
-          )(check_remote = TRUE, lib = lib)
+          set -euo pipefail
+          if grep -ERn \
+            'knhanes-dist|api\.github\.com|browser_download_url|GITHUB_TOKEN|GH_TOKEN|KNHANESGET_RELEASE_SOURCE|knhanesget\.release_source|knhanesget\.github_api_base' \
+            R man README.md; then
+            echo "A legacy core-package release route remains in the package."
+            exit 1
+          fi
+      - name: Verify public API contract without credentials
+        shell: Rscript {0}
+        run: |
+          install.packages(".", repos = NULL, type = "source")
+          version_info <- knhanesget::knhanes_version(check_remote = TRUE)
           stopifnot(
-            identical(
-              get("kng_release_source", asNamespace("knhanesget"))(),
-              "server"
-            ),
             identical(version_info$Latest_version[[1L]], "0.1.0.13"),
+            identical(version_info$Release_tag[[1L]], "v0.1.0.13"),
             identical(version_info$Check_status[[1L]], "OK")
           )
-          options(knhanesget.release_source = "github")
-          installer <- getExportedValue("knhanesget", "install_knhanes")
-          installer(version = "0.1.0.8", force = TRUE, lib = lib)
-          stopifnot(
-            identical(
-              as.character(packageVersion("knhanes", lib.loc = lib)),
-              "0.1.0.8"
-            ),
-            all(c("dplyr", "readr", "survey") %in%
-              rownames(installed.packages(lib.loc = .libPaths())))
+          request_code <- knhanesget::getToken(
+            version = "0.1.0.13",
+            quiet = TRUE
           )
-          library("knhanes", character.only = TRUE, lib.loc = lib)
-          stopifnot("package:knhanes" %in% search())
-          installer(version = "0.1.0.8", force = TRUE, lib = lib)
-          stopifnot(
-            !"package:knhanes" %in% search(),
-            identical(
-              as.character(packageVersion("knhanes", lib.loc = lib)),
-              "0.1.0.8"
+          stopifnot(grepl(
+            "^KNHREQ2\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{8}$",
+            request_code
+          ))
+          response <- curl::curl_fetch_memory(
+            paste0(
+              "https://api.knhanesr.com/v1/releases/",
+              "0.1.0.13/artifacts/archive"
             )
+          )
+          stopifnot(identical(response$status_code, 401L))
+          empty_lib <- tempfile("knhanesget-unauthorized-")
+          dir.create(empty_lib)
+          error <- tryCatch(
+            {
+              knhanesget::install_knhanes(
+                version = "0.1.0.13",
+                force = TRUE,
+                quiet = TRUE,
+                lib = empty_lib
+              )
+              NULL
+            },
+            error = identity
+          )
+          stopifnot(
+            inherits(error, "error"),
+            grepl("local knhanes license was not found", conditionMessage(error)),
+            !dir.exists(file.path(empty_lib, "knhanes"))
           )
