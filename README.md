@@ -1,7 +1,7 @@
 # knhanesget
 
 `knhanesget`是公开的轻量辅助包，用于申请、安装、激活和更新`knhanes`。
-它不包含KNHANES数据、knhanes核心分析代码、GitHub访问令牌或授权签名私钥。
+它不包含KNHANES数据、knhanes核心分析代码、长期服务器凭据或授权签名私钥。
 
 ## 首次安装
 
@@ -26,9 +26,11 @@ install_knhanes(
 )
 ```
 
-安装器会依次完成版本解析、下载、SHA-256校验、Ed25519发布签名验证、读取发布包
-依赖、从CRAN自动补齐缺失依赖、R包安装和本地授权激活。Windows和macOS用户通常
-无需预先手工安装`dplyr`、`readr`、`survey`等依赖，也不需要GitHub账号或PAT。
+安装器默认连接`https://api.knhanesr.com`，使用授权码创建短期安装会话并下载
+受保护的版本化发布资产。授权码和短期令牌不会写入下载URL，也不会由辅助包持久化。
+随后安装器会依次完成SHA-256校验、Ed25519发布签名验证、读取发布包依赖、从CRAN
+自动补齐缺失依赖、R包安装和本地授权激活。Windows和macOS用户通常无需预先手工
+安装`dplyr`、`readr`、`survey`等依赖，也不需要GitHub账号或PAT。
 
 ## 后续更新
 
@@ -44,8 +46,22 @@ knhanesget::install_knhanes()
 安装固定版本：
 
 ```r
-knhanesget::install_knhanes(version = "0.1.0.4")
+knhanesget::install_knhanes(version = "0.1.0.13")
 ```
+
+## 显式GitHub回退
+
+生产默认源不可用且维护者明确要求回退时，可在当前R会话临时使用旧GitHub
+Release源：
+
+```r
+options(knhanesget.release_source = "github")
+knhanesget::install_knhanes()
+options(knhanesget.release_source = NULL)
+```
+
+将选项恢复为`NULL`后，后续安装和更新重新使用生产默认授权服务器。无论使用哪种
+发布源，安装器都会执行相同的SHA-256和Ed25519发布签名验证。
 
 ## 状态与版本
 

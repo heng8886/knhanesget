@@ -2,7 +2,9 @@
 .kng_contact <- "henry88866@163.com"
 .kng_dist_owner <- "heng8886"
 .kng_dist_repo <- "knhanes-dist"
-.kng_fallback_version <- "0.1.0.4"
+.kng_default_release_source <- "server"
+.kng_default_server_base_url <- "https://api.knhanesr.com"
+.kng_fallback_version <- "0.1.0.13"
 .kng_release_public_key_hex <- paste0(
   "707493cd033160cc5245f52379032463",
   "715ccdd4adc115b513f6d8fb796ee02c"

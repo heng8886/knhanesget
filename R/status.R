@@ -2,7 +2,8 @@
 #'
 #' 比较当前安装版本与发布仓库中的最新正式版本。
 #'
-#' @param check_remote 逻辑值。是否访问GitHub Release检查最新版本。
+#' @param check_remote 逻辑值。是否访问当前发布源检查最新正式版本。默认发布源为
+#'   `https://api.knhanesr.com`；可显式配置GitHub Release回退。
 #' @param lib 可选R库目录；`NULL`表示按当前`.libPaths()`查找。
 #'
 #' @return 一行tibble，包含是否已安装、当前版本、最新版本、是否可更新和Release标签。
@@ -18,7 +19,10 @@ knhanes_version <- function(check_remote = TRUE, lib = NULL) {
   release_tag <- NA_character_
   check_status <- "Not checked"
   if (check_remote) {
-    release <- tryCatch(kng_release_metadata("latest"), error = identity)
+    release <- tryCatch(
+      kng_selected_release_metadata("latest"),
+      error = identity
+    )
     if (inherits(release, "error")) {
       check_status <- paste0("Unavailable: ", conditionMessage(release))
     } else {

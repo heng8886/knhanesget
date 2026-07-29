@@ -4,7 +4,8 @@
 #' 随机安装实例ID，并记录操作系统当前用户名；不读取CPU、BIOS、MAC地址或主机名。
 #'
 #' @param version 申请安装的knhanes版本。若为`NULL`，优先使用已安装版本；若尚未
-#'   安装，则尝试读取最新GitHub Release，网络不可用时回退到辅助包内置兼容版本。
+#'   安装，则尝试读取当前发布源的最新正式版本；网络不可用时回退到辅助包内置
+#'   兼容版本。
 #' @param quiet 逻辑值。若为`FALSE`，显示申请码和发送说明；若为`TRUE`，只返回
 #'   申请码。
 #'
@@ -28,7 +29,7 @@ getToken <- function(version = NULL, quiet = FALSE) {
     version <- kng_installed_version()
     if (is.na(version)) {
       version <- tryCatch(
-        kng_release_metadata("latest")$version,
+        kng_selected_release_metadata("latest")$version,
         error = function(e) .kng_fallback_version
       )
     }

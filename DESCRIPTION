@@ -1,14 +1,16 @@
 Package: knhanesget
 Title: 安装和更新 knhanes
-Version: 0.1.0.4
+Version: 0.1.0.5
 Authors@R:
     person(given = "Heng", family = "Liu", role = c("aut", "cre"),
            email = "lh1399780@163.com")
 Description: Provides a lightweight public installer for knhanes. It creates
-    a random installation request code compatible with knhanes, downloads and
+    a random installation request code compatible with knhanes, obtains
+    short-lived download sessions from the official authorization server,
     verifies versioned release archives, and supports activation, version
     checks, updates, and local deactivation. It contains no KNHANES data,
-    knhanes analysis code, GitHub access token, or private signing key.
+    knhanes analysis code, long-lived server credential, or private signing
+    key.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -16,7 +18,7 @@ RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1)
 Imports:
-    curl,
+    curl (>= 6.0.0),
     jsonlite,
     sodium,
     tibble

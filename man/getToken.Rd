@@ -8,7 +8,8 @@ getToken(version = NULL, quiet = FALSE)
 }
 \arguments{
 \item{version}{申请安装的knhanes版本。若为\code{NULL}，优先使用已安装版本；若尚未
-安装，则尝试读取最新GitHub Release，网络不可用时回退到辅助包内置兼容版本。}
+安装，则尝试读取当前发布源的最新正式版本；网络不可用时回退到辅助包内置
+兼容版本。}
 
 \item{quiet}{逻辑值。若为\code{FALSE}，显示申请码和发送说明；若为\code{TRUE}，只返回
 申请码。}

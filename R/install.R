@@ -7,20 +7,26 @@
 #'   旧`KNHLIC1.`和`KNHLIC2.`授权码仍可使用。
 #'   已激活用户更新时设为`NULL`即可。
 #' @param version 要安装的版本。默认`"latest"`安装最新正式Release；也可指定
-#'   如`"0.1.0.4"`或`"v0.1.0.4"`。
+#'   如`"0.1.0.13"`或`"v0.1.0.13"`。
 #' @param force 逻辑值。若为`TRUE`，即使同版本已经安装也重新安装。
 #' @param quiet 逻辑值。是否减少下载和安装过程输出。
 #' @param lib 安装R包的库目录。默认使用`.libPaths()`中的第一个目录。
 #'
 #' @details
-#' 发布包、校验文件和签名来自`heng8886/knhanes-dist`的版本化GitHub Release。
-#' 本函数不需要GitHub账号或PAT。校验通过后会读取发布包的`DESCRIPTION`，
+#' 默认通过`https://api.knhanesr.com`创建短期安装会话，并从授权服务器下载
+#' 发布包、SHA-256校验文件和Ed25519签名。首次安装使用`license_code`；
+#' 后续更新会自动读取本地已保存授权。授权码和短期令牌不会写入URL或持久化到本地。
+#' 校验通过后会读取发布包的`DESCRIPTION`，
 #' 使用当前CRAN镜像自动安装尚未安装的`Depends`、`Imports`和`LinkingTo`依赖，
 #' 然后才安装knhanes；若当前未配置CRAN镜像，则使用
 #' `https://cloud.r-project.org`。因此Windows和macOS用户通常无需预先手工安装依赖。
 #' 授权保存在R用户配置目录，正常更新不会删除。更新前会自动尝试卸载当前R会话中
 #' 已附加或仅加载namespace的knhanes；若其他包仍依赖该namespace而无法安全卸载，
 #' 函数会在安装前停止，并提示重启R后直接重新运行本函数。
+#'
+#' 如需显式回退到旧GitHub Release源，可在当前R会话设置
+#' `options(knhanesget.release_source = "github")`；恢复生产默认时将该选项设为
+#' `NULL`。两种来源下载后均执行相同的SHA-256和Ed25519发布签名验证。
 #'
 #' @return 隐式返回[license_status()]的一行tibble。
 #' @export
@@ -51,23 +57,20 @@ install_knhanes <- function(license_code = NULL,
   }
 
   was_loaded <- isNamespaceLoaded("knhanes")
-  release <- kng_release_metadata(version)
+  release <- kng_selected_release_metadata(version)
   installed_before <- kng_installed_version(lib)
   needs_install <- isTRUE(force) || is.na(installed_before) ||
     !identical(installed_before, release$version)
 
   if (needs_install) {
+    release <- kng_authorize_server_release(release, license_code)
     kng_prepare_package_update("knhanes", quiet = quiet)
     work <- tempfile("knhanesget-release-")
     dir.create(work)
     on.exit(unlink(work, recursive = TRUE), add = TRUE)
-    archive <- file.path(work, release$archive_name)
-    checksum <- paste0(archive, ".sha256")
-    signature <- paste0(archive, ".sig")
-    kng_download(release$archive_url, archive, quiet = quiet)
-    kng_download(release$checksum_url, checksum, quiet = quiet)
-    kng_download(release$signature_url, signature, quiet = quiet)
-    kng_verify_archive(archive, checksum, signature)
+    assets <- kng_download_release_assets(release, work, quiet = quiet)
+    archive <- assets$archive
+    kng_verify_archive(archive, assets$checksum, assets$signature)
     if (!quiet) {
       message(
         "knhanes v", release$version,

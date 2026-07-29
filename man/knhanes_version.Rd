@@ -7,7 +7,8 @@
 knhanes_version(check_remote = TRUE, lib = NULL)
 }
 \arguments{
-\item{check_remote}{逻辑值。是否访问GitHub Release检查最新版本。}
+\item{check_remote}{逻辑值。是否访问当前发布源检查最新正式版本。默认发布源为
+\verb{https://api.knhanesr.com}；可显式配置GitHub Release回退。}
 
 \item{lib}{可选R库目录；\code{NULL}表示按当前\code{.libPaths()}查找。}
 }

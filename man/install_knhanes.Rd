@@ -18,7 +18,7 @@ install_knhanes(
 已激活用户更新时设为\code{NULL}即可。}
 
 \item{version}{要安装的版本。默认\code{"latest"}安装最新正式Release；也可指定
-如\code{"0.1.0.4"}或\code{"v0.1.0.4"}。}
+如\code{"0.1.0.13"}或\code{"v0.1.0.13"}。}
 
 \item{force}{逻辑值。若为\code{TRUE}，即使同版本已经安装也重新安装。}
 
@@ -34,14 +34,20 @@ install_knhanes(
 首次安装可同时提供\code{KNHLIC3}授权码完成激活；老用户更新时无需重复输入授权码。
 }
 \details{
-发布包、校验文件和签名来自\code{heng8886/knhanes-dist}的版本化GitHub Release。
-本函数不需要GitHub账号或PAT。校验通过后会读取发布包的\code{DESCRIPTION}，
+默认通过\verb{https://api.knhanesr.com}创建短期安装会话，并从授权服务器下载
+发布包、SHA-256校验文件和Ed25519签名。首次安装使用\code{license_code}；
+后续更新会自动读取本地已保存授权。授权码和短期令牌不会写入URL或持久化到本地。
+校验通过后会读取发布包的\code{DESCRIPTION}，
 使用当前CRAN镜像自动安装尚未安装的\code{Depends}、\code{Imports}和\code{LinkingTo}依赖，
 然后才安装knhanes；若当前未配置CRAN镜像，则使用
 \verb{https://cloud.r-project.org}。因此Windows和macOS用户通常无需预先手工安装依赖。
 授权保存在R用户配置目录，正常更新不会删除。更新前会自动尝试卸载当前R会话中
 已附加或仅加载namespace的knhanes；若其他包仍依赖该namespace而无法安全卸载，
 函数会在安装前停止，并提示重启R后直接重新运行本函数。
+
+如需显式回退到旧GitHub Release源，可在当前R会话设置
+\code{options(knhanesget.release_source = "github")}；恢复生产默认时将该选项设为
+\code{NULL}。两种来源下载后均执行相同的SHA-256和Ed25519发布签名验证。
 }
 \examples{
 \dontrun{
