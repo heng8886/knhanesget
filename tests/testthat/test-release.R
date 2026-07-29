@@ -26,95 +26,32 @@ test_that("archive verification accepts matching signed assets", {
   )
 })
 
-test_that("release metadata requires all signed assets", {
-  fake_release <- list(
-    tag_name = "v0.1.0.4",
-    html_url = "https://example.test/release",
-    assets = list(
-      list(
-        name = "knhanes_0.1.0.4.tar.gz",
-        browser_download_url = "https://example.test/archive"
-      )
-    )
-  )
-  local_mocked_bindings(
-    kng_fetch_json = function(url) fake_release,
-    .package = "knhanesget"
-  )
-  expect_error(
-    knhanesget:::kng_release_metadata("latest"),
-    "does not contain"
-  )
-})
-
-test_that("release metadata resolves asset URLs", {
-  version <- "0.1.0.4"
-  base <- paste0("knhanes_", version, ".tar.gz")
-  fake_release <- list(
-    tag_name = paste0("v", version),
-    html_url = "https://example.test/release",
-    assets = lapply(c(base, paste0(base, ".sha256"), paste0(base, ".sig")),
-      function(name) list(
-        name = name,
-        browser_download_url = paste0("https://example.test/", name)
-      )
-    )
-  )
-  local_mocked_bindings(
-    kng_fetch_json = function(url) fake_release,
-    .package = "knhanesget"
-  )
-  result <- knhanesget:::kng_release_metadata("latest")
-  expect_identical(result$version, version)
-  expect_identical(result$tag, "v0.1.0.4")
-  expect_true(endsWith(result$signature_url, ".sig"))
-})
-
-test_that("GitHub metadata headers use an optional environment token", {
-  withr::local_envvar(c(GITHUB_TOKEN = NA, GH_TOKEN = NA))
-  anonymous <- knhanesget:::kng_github_headers()
-  expect_false("Authorization" %in% names(anonymous))
-  expect_identical(
-    unname(anonymous[["X-GitHub-Api-Version"]]),
-    "2022-11-28"
-  )
-
-  withr::local_envvar(GITHUB_TOKEN = "test-actions-token")
-  authenticated <- knhanesget:::kng_github_headers()
-  expect_identical(
-    unname(authenticated[["Authorization"]]),
-    "Bearer test-actions-token"
-  )
-})
-
-test_that("server is default and GitHub remains an explicit fallback", {
-  withr::local_options(knhanesget.release_source = NULL)
-  withr::local_envvar(KNHANESGET_RELEASE_SOURCE = NA_character_)
-  expect_identical(knhanesget:::kng_release_source(), "server")
-
-  withr::local_options(knhanesget.server_base_url = NULL)
-  withr::local_envvar(KNHANESGET_SERVER_BASE_URL = NA_character_)
+test_that("official server is pinned outside the isolated test hook", {
   expect_identical(
     knhanesget:::kng_server_base_url(),
     "https://api.knhanesr.com"
   )
 
-  withr::local_envvar(KNHANESGET_RELEASE_SOURCE = "server")
-  withr::local_options(knhanesget.release_source = "github")
-  expect_identical(knhanesget:::kng_release_source(), "github")
-
-  withr::local_options(knhanesget.release_source = "server")
-  expect_identical(knhanesget:::kng_release_source(), "server")
-
-  withr::local_options(knhanesget.release_source = "other")
-  expect_error(
-    knhanesget:::kng_release_source(),
-    "must be 'github' or 'server'",
-    fixed = TRUE
+  withr::local_options(
+    knhanesget.release_source = "legacy",
+    knhanesget.server_base_url = "https://untrusted.example.test"
   )
+  withr::local_envvar(c(
+    KNHANESGET_RELEASE_SOURCE = "legacy",
+    KNHANESGET_SERVER_BASE_URL = "https://untrusted.example.test"
+  ))
+  expect_identical(
+    knhanesget:::kng_server_base_url(),
+    "https://api.knhanesr.com"
+  )
+  expect_false(exists(
+    paste0("kng_", "release_", "source"),
+    envir = asNamespace("knhanesget"),
+    inherits = FALSE
+  ))
 })
 
-test_that("server source requires a credential-free HTTPS base URL", {
+test_that("official server constant requires a credential-free HTTPS URL", {
   invalid <- c(
     "http://api.example.test",
     "https://user:secret@api.example.test",
@@ -122,7 +59,10 @@ test_that("server source requires a credential-free HTTPS base URL", {
     "https://api.example.test#fragment"
   )
   for (value in invalid) {
-    withr::local_options(knhanesget.server_base_url = value)
+    local_mocked_bindings(
+      .kng_default_server_base_url = value,
+      .package = "knhanesget"
+    )
     expect_error(
       knhanesget:::kng_server_base_url(),
       "must be an HTTPS URL",
@@ -130,8 +70,9 @@ test_that("server source requires a credential-free HTTPS base URL", {
     )
   }
 
-  withr::local_options(
-    knhanesget.server_base_url = "https://api.example.test/base/"
+  local_mocked_bindings(
+    .kng_default_server_base_url = "https://api.example.test/base/",
+    .package = "knhanesget"
   )
   expect_identical(
     knhanesget:::kng_server_base_url(),
@@ -140,8 +81,9 @@ test_that("server source requires a credential-free HTTPS base URL", {
 })
 
 test_that("server metadata uses public latest endpoint and protected paths", {
-  withr::local_options(
-    knhanesget.server_base_url = "https://api.example.test"
+  local_mocked_bindings(
+    .kng_default_server_base_url = "https://api.example.test",
+    .package = "knhanesget"
   )
   seen <- NULL
   local_mocked_bindings(
@@ -178,8 +120,9 @@ test_that("server metadata uses public latest endpoint and protected paths", {
 })
 
 test_that("server install session uses body credentials and a short bearer token", {
-  withr::local_options(
-    knhanesget.server_base_url = "https://api.example.test"
+  local_mocked_bindings(
+    .kng_default_server_base_url = "https://api.example.test",
+    .package = "knhanesget"
   )
   seen <- NULL
   local_mocked_bindings(
@@ -248,9 +191,10 @@ test_that("protected downloads put the session token only in Authorization", {
     unname(headers[["Authorization"]]),
     "Bearer short-lived-token"
   )
-  expect_identical(
+  expect_error(
     knhanesget:::kng_download_headers(),
-    character()
+    "short-lived install session access token is required",
+    fixed = TRUE
   )
   expect_error(
     knhanesget:::kng_download_headers("valid-token-value\nInjected: yes"),

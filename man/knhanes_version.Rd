@@ -7,8 +7,8 @@
 knhanes_version(check_remote = TRUE, lib = NULL)
 }
 \arguments{
-\item{check_remote}{逻辑值。是否访问当前发布源检查最新正式版本。默认发布源为
-\verb{https://api.knhanesr.com}；可显式配置GitHub Release回退。}
+\item{check_remote}{逻辑值。是否访问官方授权服务器
+\verb{https://api.knhanesr.com}检查最新正式版本。}
 
 \item{lib}{可选R库目录；\code{NULL}表示按当前\code{.libPaths()}查找。}
 }
@@ -16,5 +16,5 @@ knhanes_version(check_remote = TRUE, lib = NULL)
 一行tibble，包含是否已安装、当前版本、最新版本、是否可更新和Release标签。
 }
 \description{
-比较当前安装版本与发布仓库中的最新正式版本。
+比较当前安装版本与官方授权服务器中的最新正式版本。
 }

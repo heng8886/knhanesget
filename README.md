@@ -30,7 +30,7 @@ install_knhanes(
 受保护的版本化发布资产。授权码和短期令牌不会写入下载URL，也不会由辅助包持久化。
 随后安装器会依次完成SHA-256校验、Ed25519发布签名验证、读取发布包依赖、从CRAN
 自动补齐缺失依赖、R包安装和本地授权激活。Windows和macOS用户通常无需预先手工
-安装`dplyr`、`readr`、`survey`等依赖，也不需要GitHub账号或PAT。
+安装`dplyr`、`readr`、`survey`等依赖。核心包下载不需要GitHub账号或PAT。
 
 ## 后续更新
 
@@ -48,20 +48,6 @@ knhanesget::install_knhanes()
 ```r
 knhanesget::install_knhanes(version = "0.1.0.13")
 ```
-
-## 显式GitHub回退
-
-生产默认源不可用且维护者明确要求回退时，可在当前R会话临时使用旧GitHub
-Release源：
-
-```r
-options(knhanesget.release_source = "github")
-knhanesget::install_knhanes()
-options(knhanesget.release_source = NULL)
-```
-
-将选项恢复为`NULL`后，后续安装和更新重新使用生产默认授权服务器。无论使用哪种
-发布源，安装器都会执行相同的SHA-256和Ed25519发布签名验证。
 
 ## 状态与版本
 

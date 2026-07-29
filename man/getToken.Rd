@@ -8,7 +8,7 @@ getToken(version = NULL, quiet = FALSE)
 }
 \arguments{
 \item{version}{申请安装的knhanes版本。若为\code{NULL}，优先使用已安装版本；若尚未
-安装，则尝试读取当前发布源的最新正式版本；网络不可用时回退到辅助包内置
+安装，则尝试读取官方授权服务器的最新正式版本；网络不可用时使用辅助包内置
 兼容版本。}
 
 \item{quiet}{逻辑值。若为\code{FALSE}，显示申请码和发送说明；若为\code{TRUE}，只返回
@@ -24,7 +24,7 @@ getToken(version = NULL, quiet = FALSE)
 \details{
 随机安装ID保存在R用户级knhanes配置目录。正常更新或重装R包不会改变该ID，
 因此已签发授权可以继续使用。申请码只包含随机安装ID、目标版本、当前用户名和
-校验值，不包含KNHANES数据、GitHub令牌或授权私钥。\code{KNHREQ2}使用URL安全
+校验值，不包含KNHANES数据、下载令牌或授权私钥。\code{KNHREQ2}使用URL安全
 Base64编码和紧凑二进制安装ID，比旧\code{KNHREQ1}十六进制格式更短。用户名仅用于
 帮助维护者识别申请设备，不参与授权绑定。
 }

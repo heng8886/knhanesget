@@ -1,38 +1,5 @@
-kng_github_api <- function(path) {
-  base <- getOption(
-    "knhanesget.github_api_base",
-    "https://api.github.com"
-  )
-  paste0(sub("/$", "", base), path)
-}
-
-kng_release_source <- function() {
-  source <- getOption("knhanesget.release_source", NULL)
-  if (is.null(source)) {
-    source <- Sys.getenv(
-      "KNHANESGET_RELEASE_SOURCE",
-      unset = .kng_default_release_source
-    )
-  }
-  kng_scalar_character(source, "knhanesget release source")
-  source <- tolower(trimws(source))
-  if (!source %in% c("github", "server")) {
-    stop(
-      "knhanesget release source must be 'github' or 'server'.",
-      call. = FALSE
-    )
-  }
-  source
-}
-
 kng_server_base_url <- function() {
-  base <- getOption("knhanesget.server_base_url", NULL)
-  if (is.null(base)) {
-    base <- Sys.getenv(
-      "KNHANESGET_SERVER_BASE_URL",
-      unset = .kng_default_server_base_url
-    )
-  }
+  base <- .kng_default_server_base_url
   kng_scalar_character(base, "knhanesget server base URL")
   base <- sub("/+$", "", trimws(base))
   parsed <- tryCatch(
@@ -151,16 +118,6 @@ kng_server_release_metadata <- function(version = "latest") {
   )
 }
 
-kng_selected_release_metadata <- function(version = "latest") {
-  if (identical(kng_release_source(), "server")) {
-    return(kng_server_release_metadata(version))
-  }
-  release <- kng_release_metadata(version)
-  release$source <- "github"
-  release$access_token <- NULL
-  release
-}
-
 kng_local_license_code <- function(license_code = NULL) {
   if (!is.null(license_code)) {
     kng_scalar_character(license_code, "license_code")
@@ -190,9 +147,6 @@ kng_server_nonce <- function() {
 }
 
 kng_authorize_server_release <- function(release, license_code = NULL) {
-  if (!identical(release$source, "server")) {
-    return(release)
-  }
   code <- kng_local_license_code(license_code)
   request_code <- getToken(version = release$version, quiet = TRUE)
   session <- kng_server_request_json(
@@ -224,96 +178,16 @@ kng_authorize_server_release <- function(release, license_code = NULL) {
   release
 }
 
-kng_github_headers <- function() {
-  headers <- c(
-    Accept = "application/vnd.github+json",
-    `X-GitHub-Api-Version` = "2022-11-28"
-  )
-  token <- Sys.getenv("GITHUB_TOKEN", unset = "")
-  if (!nzchar(token)) {
-    token <- Sys.getenv("GH_TOKEN", unset = "")
-  }
-  if (nzchar(token)) {
-    headers <- c(headers, Authorization = paste("Bearer", token))
-  }
-  headers
-}
-
-kng_fetch_json <- function(url) {
-  handle <- curl::new_handle(
-    useragent = paste0("knhanesget/", utils::packageVersion("knhanesget"))
-  )
-  curl::handle_setheaders(
-    handle,
-    .list = as.list(kng_github_headers())
-  )
-  response <- curl::curl_fetch_memory(url, handle = handle)
-  if (response$status_code != 200L) {
-    stop(
-      "Cannot read the knhanes release metadata (HTTP ",
-      response$status_code,
-      ").",
-      call. = FALSE
-    )
-  }
-  jsonlite::fromJSON(rawToChar(response$content), simplifyVector = FALSE)
-}
-
-kng_release_metadata <- function(version = "latest") {
-  kng_scalar_character(version, "version")
-  if (identical(trimws(version), "latest")) {
-    path <- paste0(
-      "/repos/", .kng_dist_owner, "/", .kng_dist_repo, "/releases/latest"
-    )
-  } else {
-    version <- kng_normalize_version(version)
-    path <- paste0(
-      "/repos/", .kng_dist_owner, "/", .kng_dist_repo,
-      "/releases/tags/v", version
-    )
-  }
-  release <- kng_fetch_json(kng_github_api(path))
-  tag <- release$tag_name %||% ""
-  resolved_version <- kng_normalize_version(tag)
-  asset_names <- vapply(release$assets, `[[`, character(1), "name")
-  asset_urls <- vapply(
-    release$assets,
-    `[[`,
-    character(1),
-    "browser_download_url"
-  )
-  expected <- c(
-    archive = paste0("knhanes_", resolved_version, ".tar.gz"),
-    checksum = paste0("knhanes_", resolved_version, ".tar.gz.sha256"),
-    signature = paste0("knhanes_", resolved_version, ".tar.gz.sig")
-  )
-  positions <- match(unname(expected), asset_names)
-  names(positions) <- names(expected)
-  if (anyNA(positions)) {
-    stop(
-      "Release v", resolved_version,
-      " does not contain the archive, checksum, and signature assets.",
-      call. = FALSE
-    )
-  }
-  list(
-    version = resolved_version,
-    tag = paste0("v", resolved_version),
-    archive_name = unname(expected[["archive"]]),
-    archive_url = asset_urls[[positions[["archive"]]]],
-    checksum_url = asset_urls[[positions[["checksum"]]]],
-    signature_url = asset_urls[[positions[["signature"]]]],
-    html_url = release$html_url %||% NA_character_
-  )
-}
-
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
 
 kng_download_headers <- function(access_token = NULL) {
   if (is.null(access_token)) {
-    return(character())
+    stop(
+      "A short-lived install session access token is required.",
+      call. = FALSE
+    )
   }
   kng_scalar_character(access_token, "install session access token")
   if (!grepl(

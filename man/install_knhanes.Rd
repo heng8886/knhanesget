@@ -30,7 +30,7 @@ install_knhanes(
 隐式返回\code{\link[=license_status]{license_status()}}的一行tibble。
 }
 \description{
-从维护者发布仓库下载指定knhanes版本，验证SHA-256与Ed25519发布签名后安装。
+从官方授权服务器下载指定knhanes版本，验证SHA-256与Ed25519发布签名后安装。
 首次安装可同时提供\code{KNHLIC3}授权码完成激活；老用户更新时无需重复输入授权码。
 }
 \details{
@@ -44,10 +44,6 @@ install_knhanes(
 授权保存在R用户配置目录，正常更新不会删除。更新前会自动尝试卸载当前R会话中
 已附加或仅加载namespace的knhanes；若其他包仍依赖该namespace而无法安全卸载，
 函数会在安装前停止，并提示重启R后直接重新运行本函数。
-
-如需显式回退到旧GitHub Release源，可在当前R会话设置
-\code{options(knhanesget.release_source = "github")}；恢复生产默认时将该选项设为
-\code{NULL}。两种来源下载后均执行相同的SHA-256和Ed25519发布签名验证。
 }
 \examples{
 \dontrun{

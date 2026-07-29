@@ -4,7 +4,7 @@
 #' 随机安装实例ID，并记录操作系统当前用户名；不读取CPU、BIOS、MAC地址或主机名。
 #'
 #' @param version 申请安装的knhanes版本。若为`NULL`，优先使用已安装版本；若尚未
-#'   安装，则尝试读取当前发布源的最新正式版本；网络不可用时回退到辅助包内置
+#'   安装，则尝试读取官方授权服务器的最新正式版本；网络不可用时使用辅助包内置
 #'   兼容版本。
 #' @param quiet 逻辑值。若为`FALSE`，显示申请码和发送说明；若为`TRUE`，只返回
 #'   申请码。
@@ -12,7 +12,7 @@
 #' @details
 #' 随机安装ID保存在R用户级knhanes配置目录。正常更新或重装R包不会改变该ID，
 #' 因此已签发授权可以继续使用。申请码只包含随机安装ID、目标版本、当前用户名和
-#' 校验值，不包含KNHANES数据、GitHub令牌或授权私钥。`KNHREQ2`使用URL安全
+#' 校验值，不包含KNHANES数据、下载令牌或授权私钥。`KNHREQ2`使用URL安全
 #' Base64编码和紧凑二进制安装ID，比旧`KNHREQ1`十六进制格式更短。用户名仅用于
 #' 帮助维护者识别申请设备，不参与授权绑定。
 #'
@@ -29,8 +29,8 @@ getToken <- function(version = NULL, quiet = FALSE) {
     version <- kng_installed_version()
     if (is.na(version)) {
       version <- tryCatch(
-        kng_selected_release_metadata("latest")$version,
-        error = function(e) .kng_fallback_version
+        kng_server_release_metadata("latest")$version,
+        error = function(e) .kng_compatible_core_version
       )
     }
   }
