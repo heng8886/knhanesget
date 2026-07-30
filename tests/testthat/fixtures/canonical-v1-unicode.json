@@ -1,0 +1,46 @@
+{
+  "schema": "knhanes-canonical-v1-unicode-fixture",
+  "fixture_version": 1,
+  "algorithm": "Ed25519",
+  "signing_seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "registration": {
+    "protocol_domain": "knhanes-device-registration-v1",
+    "api_identity": "https://api.knhanesr.com",
+    "installation_id": "00112233445566778899aabbccddeeff",
+    "version": "0.1.0.13",
+    "signing_public_key": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+    "encryption_public_key": "ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8",
+    "nonce": "UnicodeGoldenNonce001",
+    "cases": [
+      {
+        "name": "nfd",
+        "username": "\u7814\u7a76\u8005 e\u0301",
+        "username_codepoints": [
+          "U+7814",
+          "U+7A76",
+          "U+8005",
+          "U+0020",
+          "U+0065",
+          "U+0301"
+        ],
+        "expected_canonical_hex": "6b6e68616e65732d6465766963652d726567697374726174696f6e2d76310068747470733a2f2f6170692e6b6e68616e6573722e636f6d00303031313232333334343535363637373838393961616262636364646565666600302e312e302e313300e7a094e7a9b6e880852065cc810041364548765f504f454c3464634e3059353076416d57666b316a436270513166486479475a424a564d626700494345694979516c4a69636f4b536f724c4330754c7a41784d6a4d304e5459334f446b364f7a7739506a3800556e69636f6465476f6c64656e4e6f6e6365303031",
+        "expected_sha256": "67b9aa8f807053f71795a2dbc3a247ea5c86a9d24c531cfa81035a25092305e7",
+        "expected_signature_base64url": "wQzHDTDKEt6W9zPtae2KDF5bb33JjjM2SCUJGeMzPg1JDQmDvpXzBKrwgtBidArRNuIJOucdU0hzTHyRD23FCQ"
+      },
+      {
+        "name": "nfc",
+        "username": "\u7814\u7a76\u8005 \u00e9",
+        "username_codepoints": [
+          "U+7814",
+          "U+7A76",
+          "U+8005",
+          "U+0020",
+          "U+00E9"
+        ],
+        "expected_canonical_hex": "6b6e68616e65732d6465766963652d726567697374726174696f6e2d76310068747470733a2f2f6170692e6b6e68616e6573722e636f6d00303031313232333334343535363637373838393961616262636364646565666600302e312e302e313300e7a094e7a9b6e8808520c3a90041364548765f504f454c3464634e3059353076416d57666b316a436270513166486479475a424a564d626700494345694979516c4a69636f4b536f724c4330754c7a41784d6a4d304e5459334f446b364f7a7739506a3800556e69636f6465476f6c64656e4e6f6e6365303031",
+        "expected_sha256": "5503513dcecbfcd71b35147fe790a493c035f4c3f8bd24170b71df60cb2acee8",
+        "expected_signature_base64url": "vLQ2u-WMgmEJYTs8JWRgy5VrtuPXztHUkEn3k-dPMds6hWjDJHKi0_RFZC1xdxmPkVB9n4TmfX_AdmUYjq9ZAw"
+      }
+    ]
+  }
+}

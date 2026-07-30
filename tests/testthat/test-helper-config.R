@@ -4,5 +4,8 @@ test_that("test configuration remains isolated for the full test scope", {
 
   expect_identical(getOption("knhanesget.config_dir_test"), test_config)
   expect_identical(knhanesget:::kng_config_dir(), test_config)
-  expect_false(identical(normalizePath(test_config), normalizePath(real_config)))
+  expect_false(identical(
+    normalizePath(test_config, winslash = "/", mustWork = TRUE),
+    normalizePath(real_config, winslash = "/", mustWork = FALSE)
+  ))
 })

@@ -1,16 +1,16 @@
 Package: knhanesget
 Title: 安装和更新 knhanes
-Version: 0.1.0.6
+Version: 0.1.0.7
 Authors@R:
     person(given = "Heng", family = "Liu", role = c("aut", "cre"),
            email = "lh1399780@163.com")
-Description: Provides a lightweight public installer for knhanes. It creates
-    a random installation request code compatible with knhanes, obtains
-    short-lived download sessions from the official authorization server,
-    verifies versioned release archives, and supports activation, version
-    checks, updates, and local deactivation. It contains no KNHANES data,
-    knhanes analysis code, long-lived server credential, or private signing
-    key.
+Description: Provides a lightweight public installer for knhanes. It registers
+    a locally generated Ed25519 and Curve25519 device identity, obtains
+    administrator-approved short-lived download sessions from the official
+    authorization server, decrypts device-bound activation envelopes, verifies
+    versioned release archives, and supports activation, version checks,
+    updates, and local deactivation. It contains no KNHANES data, knhanes
+    analysis code, long-lived server credential, or server signing key.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

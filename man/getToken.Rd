@@ -2,31 +2,35 @@
 % Please edit documentation in R/token.R
 \name{getToken}
 \alias{getToken}
-\title{生成 knhanes 安装授权申请码}
+\title{登记 knhanes 安装授权申请}
 \usage{
 getToken(version = NULL, quiet = FALSE)
 }
 \arguments{
-\item{version}{申请安装的knhanes版本。若为\code{NULL}，优先使用已安装版本；若尚未
-安装，则尝试读取官方授权服务器的最新正式版本；网络不可用时使用辅助包内置
-兼容版本。}
+\item{version}{申请安装的knhanes版本。若为\code{NULL}，优先读取官方授权服务器的
+最新正式版本；网络不可用时依次使用已安装版本和辅助包内置兼容版本。}
 
 \item{quiet}{逻辑值。若为\code{FALSE}，显示申请码和发送说明；若为\code{TRUE}，只返回
 申请码。}
 }
 \value{
-隐式返回以\code{KNHREQ2.}开头的申请码字符串。
+隐式返回以\code{KNHREQ3.}开头的短申请码字符串。
 }
 \description{
-在安装knhanes之前生成与其授权系统完全兼容的\code{KNHREQ2}申请码。申请码使用
-随机安装实例ID，并记录操作系统当前用户名；不读取CPU、BIOS、MAC地址或主机名。
+在官方授权服务器登记当前安装实例，保存并显示服务器返回的短\code{KNHREQ3}
+申请码。管理员批准后，直接运行\code{\link[=install_knhanes]{install_knhanes()}}即可安装和激活，无需手工
+复制授权码。
 }
 \details{
-随机安装ID保存在R用户级knhanes配置目录。正常更新或重装R包不会改变该ID，
-因此已签发授权可以继续使用。申请码只包含随机安装ID、目标版本、当前用户名和
-校验值，不包含KNHANES数据、下载令牌或授权私钥。\code{KNHREQ2}使用URL安全
-Base64编码和紧凑二进制安装ID，比旧\code{KNHREQ1}十六进制格式更短。用户名仅用于
-帮助维护者识别申请设备，不参与授权绑定。
+首次运行会在R用户级knhanesget配置目录生成Ed25519设备签名私钥和Curve25519
+设备解密私钥；macOS/Linux将两把私钥文件权限设为\code{0600}，Windows则使用受限
+ACL保护，两把私钥均不会离开本机。登记请求只发送安装ID、目标版本、当前用户名、
+两把公钥、随机nonce和Ed25519签名，不读取或发送CPU、BIOS、MAC地址或主机名。
+服务器返回的\code{KNHREQ3}申请码不包含私钥，保存在同一配置目录。正常更新或重装R包
+不会改变安装ID和设备密钥。
+
+用户名仅用于帮助维护者识别申请设备，不参与授权绑定。申请登记必须连接固定的
+官方HTTPS授权服务器。
 }
 \examples{
 \dontrun{
