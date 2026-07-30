@@ -89,7 +89,8 @@ license_status <- function(lib = NULL) {
 #'
 #' @param confirm 为防止误操作，必须明确设为`TRUE`。
 #' @param reset_installation_id 是否同时删除随机安装ID。默认`FALSE`，普通反激活
-#'   仍保留稳定申请码；设为`TRUE`后下次[getToken()]会生成新ID。
+#'   仍保留稳定申请码和设备密钥；设为`TRUE`后同时删除安装ID、`KNHREQ3`
+#'   申请码及设备签名/解密私钥，下次[getToken()]会创建全新的安装实例申请。
 #'
 #' @return 隐式返回一行tibble，说明是否删除授权和重置安装ID。
 #' @export
@@ -109,12 +110,30 @@ deactivate_device <- function(confirm = FALSE,
     FALSE
   }
   installation_reset <- FALSE
-  if (reset_installation_id && file.exists(installation_path)) {
-    installation_reset <- unlink(installation_path) == 0L
+  device_state_reset <- FALSE
+  if (reset_installation_id) {
+    reset_paths <- c(
+      installation_path,
+      kng_license_request_path(),
+      kng_license_request_version_path(),
+      kng_device_signing_key_path(),
+      kng_device_encryption_key_path()
+    )
+    existing <- reset_paths[file.exists(reset_paths)]
+    if (length(existing)) {
+      removed <- vapply(
+        existing,
+        function(path) unlink(path) == 0L,
+        logical(1)
+      )
+      device_state_reset <- all(removed)
+    }
+    installation_reset <- !file.exists(installation_path)
   }
   result <- tibble::tibble(
     License_removed = license_removed,
     Installation_ID_reset = installation_reset,
+    Device_credentials_reset = device_state_reset,
     Config_dir = kng_config_dir()
   )
   if (license_removed) {

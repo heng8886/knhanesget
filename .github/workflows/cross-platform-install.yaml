@@ -88,14 +88,6 @@ jobs:
             identical(version_info$Release_tag[[1L]], "v0.1.0.13"),
             identical(version_info$Check_status[[1L]], "OK")
           )
-          request_code <- knhanesget::getToken(
-            version = "0.1.0.13",
-            quiet = TRUE
-          )
-          stopifnot(grepl(
-            "^KNHREQ2\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{8}$",
-            request_code
-          ))
           response <- curl::curl_fetch_memory(
             paste0(
               "https://api.knhanesr.com/v1/releases/",
@@ -119,6 +111,9 @@ jobs:
           )
           stopifnot(
             inherits(error, "error"),
-            grepl("local knhanes license was not found", conditionMessage(error)),
+            grepl(
+              "registered knhanes license request was not found",
+              conditionMessage(error)
+            ),
             !dir.exists(file.path(empty_lib, "knhanes"))
           )

@@ -13,9 +13,11 @@ install_knhanes(
 )
 }
 \arguments{
-\item{license_code}{首次激活使用的完整knhanes授权码，新版通常以\code{KNHLIC3.}开头。
-旧\code{KNHLIC1.}和\code{KNHLIC2.}授权码仍可使用。
-已激活用户更新时设为\code{NULL}即可。}
+\item{license_code}{可选的完整knhanes授权码。普通在线审批流程保持默认\code{NULL}；
+管理员批准\code{\link[=getToken]{getToken()}}生成的申请后，函数会从官方服务器取得当前设备加密的
+激活信封并自动激活。授权服务器的显式兼容安装路径仅接受\code{KNHLIC3.}授权码。
+\code{KNHLIC1.}或\code{KNHLIC2.}若仍受已安装knhanes支持，只可用于无需服务器下载的
+本地激活，不作为本辅助包在线安装的兼容承诺。已激活用户更新时保持\code{NULL}。}
 
 \item{version}{要安装的版本。默认\code{"latest"}安装最新正式Release；也可指定
 如\code{"0.1.0.13"}或\code{"v0.1.0.13"}。}
@@ -31,12 +33,20 @@ install_knhanes(
 }
 \description{
 从官方授权服务器下载指定knhanes版本，验证SHA-256与Ed25519发布签名后安装。
-首次安装可同时提供\code{KNHLIC3}授权码完成激活；老用户更新时无需重复输入授权码。
+通过\code{\link[=getToken]{getToken()}}登记并获管理员批准后，首次安装无需手工输入授权码；老用户更新
+同样无需重复输入授权码。
 }
 \details{
 默认通过\verb{https://api.knhanesr.com}创建短期安装会话，并从授权服务器下载
-发布包、SHA-256校验文件和Ed25519签名。首次安装使用\code{license_code}；
-后续更新会自动读取本地已保存授权。授权码和短期令牌不会写入URL或持久化到本地。
+发布包、SHA-256校验文件和Ed25519签名。只要本机保留\code{KNHREQ3}申请码及完整
+设备密钥，未显式传入\code{license_code}的安装和更新都必须使用本机Ed25519签名
+完成一次性挑战；即使knhanes已有本地授权，也不会降级为仅提交旧授权码的流程。
+函数使用本机Curve25519私钥解开\code{activation_envelope}；明文授权码只在内存中
+短暂存在，随后由knhanes自身验证并保存。仅显式提供\code{license_code}，或没有设备
+注册资料的既有用户，才使用兼容流程。服务器要求设备证明或设备证明失败时不会
+静默回退。首次尚未激活且\code{version = "latest"}时，函数沿用申请时保存的版本；
+已激活设备后续更新则重新解析最新版本，并以该精确目标版本完成挑战。授权码和
+短期令牌不会写入URL。
 校验通过后会读取发布包的\code{DESCRIPTION}，
 使用当前CRAN镜像自动安装尚未安装的\code{Depends}、\code{Imports}和\code{LinkingTo}依赖，
 然后才安装knhanes；若当前未配置CRAN镜像，则使用
@@ -47,7 +57,10 @@ install_knhanes(
 }
 \examples{
 \dontrun{
-install_knhanes(license_code = "KNHLIC3.<payload>.<signature>")
+getToken()
+# 管理员批准后：
 install_knhanes()
+# 兼容旧流程：
+install_knhanes(license_code = "KNHLIC3.<payload>.<signature>")
 }
 }

@@ -4,6 +4,7 @@ local_knhanesget_config <- function() {
   test_env <- parent.frame()
   withr::local_options(
     knhanesget.config_dir_test = path,
+    knhanesget.device_config_dir_test = path,
     .local_envir = test_env
   )
   withr::defer(unlink(path, recursive = TRUE), envir = test_env)

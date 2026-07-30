@@ -15,18 +15,41 @@ test_that("deactivate_device requires confirmation", {
 
 test_that("deactivate_device removes requested local state", {
   local_knhanesget_config()
-  getToken(version = "0.1.0.4", quiet = TRUE)
+  knhanesget:::kng_installation_id()
+  knhanesget:::kng_device_signing_key()
+  knhanesget:::kng_device_encryption_key()
+  knhanesget:::kng_write_private_file(
+    "KNHREQ3.abcdefghijklmnopqrstuvwxyz012345",
+    knhanesget:::kng_license_request_path()
+  )
+  knhanesget:::kng_write_private_file(
+    "0.1.0.13",
+    knhanesget:::kng_license_request_version_path()
+  )
   writeLines("test-license", knhanesget:::kng_license_path())
 
   result <- deactivate_device(confirm = TRUE)
   expect_true(result$License_removed[[1L]])
   expect_false(result$Installation_ID_reset[[1L]])
   expect_true(file.exists(knhanesget:::kng_installation_path()))
+  expect_true(file.exists(knhanesget:::kng_device_signing_key_path()))
+  expect_true(file.exists(knhanesget:::kng_device_encryption_key_path()))
+  expect_true(file.exists(knhanesget:::kng_license_request_path()))
+  expect_true(file.exists(
+    knhanesget:::kng_license_request_version_path()
+  ))
 
   result <- deactivate_device(
     confirm = TRUE,
     reset_installation_id = TRUE
   )
   expect_true(result$Installation_ID_reset[[1L]])
+  expect_true(result$Device_credentials_reset[[1L]])
   expect_false(file.exists(knhanesget:::kng_installation_path()))
+  expect_false(file.exists(knhanesget:::kng_device_signing_key_path()))
+  expect_false(file.exists(knhanesget:::kng_device_encryption_key_path()))
+  expect_false(file.exists(knhanesget:::kng_license_request_path()))
+  expect_false(file.exists(
+    knhanesget:::kng_license_request_version_path()
+  ))
 })
