@@ -67,7 +67,14 @@ test_that("getToken registers stable device keys and saves a short request", {
   )
   expect_true(file.exists(knhanesget:::kng_device_signing_key_path()))
   expect_true(file.exists(knhanesget:::kng_device_encryption_key_path()))
-  expect_identical(dirname(knhanesget:::kng_device_signing_key_path()), config)
+  expect_identical(
+    normalizePath(
+      dirname(knhanesget:::kng_device_signing_key_path()),
+      winslash = "/",
+      mustWork = TRUE
+    ),
+    normalizePath(config, winslash = "/", mustWork = TRUE)
+  )
 
   if (.Platform$OS.type != "windows") {
     expect_identical(
@@ -396,8 +403,11 @@ test_that("Windows ACL integration excludes broad security principals", {
   sids <- unique(trimws(result$output))
   sids <- sids[grepl("^S-[0-9-]+$", sids)]
   expect_gt(length(sids), 0L)
-  expect_empty(intersect(
-    sids,
-    c("S-1-1-0", "S-1-5-11", "S-1-5-32-545")
-  ))
+  expect_length(
+    intersect(
+      sids,
+      c("S-1-1-0", "S-1-5-11", "S-1-5-32-545")
+    ),
+    0L
+  )
 })
