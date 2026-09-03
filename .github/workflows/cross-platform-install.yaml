@@ -83,15 +83,26 @@ jobs:
         run: |
           install.packages(".", repos = NULL, type = "source")
           version_info <- knhanesget::knhanes_version(check_remote = TRUE)
+          expected_version <- "0.1.0.15"
+          actual_version <- version_info$Latest_version[[1L]]
+          if (!identical(actual_version, expected_version)) {
+            stop(
+              "Official server latest version is ", actual_version,
+              "; expected ", expected_version, "."
+            )
+          }
           stopifnot(
-            identical(version_info$Latest_version[[1L]], "0.1.0.13"),
-            identical(version_info$Release_tag[[1L]], "v0.1.0.13"),
+            identical(
+              version_info$Release_tag[[1L]],
+              paste0("v", expected_version)
+            ),
             identical(version_info$Check_status[[1L]], "OK")
           )
           response <- curl::curl_fetch_memory(
             paste0(
               "https://api.knhanesr.com/v1/releases/",
-              "0.1.0.13/artifacts/archive"
+              expected_version,
+              "/artifacts/archive"
             )
           )
           stopifnot(identical(response$status_code, 401L))
@@ -100,7 +111,7 @@ jobs:
           error <- tryCatch(
             {
               knhanesget::install_knhanes(
-                version = "0.1.0.13",
+                version = expected_version,
                 force = TRUE,
                 quiet = TRUE,
                 lib = empty_lib
