@@ -1,3 +1,12 @@
+# knhanesget 0.1.0.8
+
+* Windows ACL回读验证改为按字节处理账户名和固定安全主体SID，不再对`icacls`
+  的整段本地化输出调用`tolower()`。这修复了中文Windows返回CP936/GBK文本时，
+  R的UTF-8会话报`invalid multibyte string`并中止安装的问题，同时保留账户名
+  ASCII大小写不敏感匹配和广泛主体拒绝检查。
+* `whoami`返回的账户名改用ASCII空白字节裁剪，包含非UTF-8本地账户名时不会在
+  权限收紧前触发字符编码错误。
+
 # knhanesget 0.1.0.7
 
 * `getToken()`现在向固定官方HTTPS服务器登记本机生成的Ed25519签名公钥和

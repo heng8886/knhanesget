@@ -342,6 +342,78 @@ test_that("Windows ACL lockdown is reread and verified", {
   expect_identical(calls[[2L]], list(command = "icacls", args = path))
 })
 
+test_that("Windows ACL verification tolerates localized non-UTF-8 output", {
+  path <- tempfile("private-state-")
+  writeLines("secret", path)
+  localized_cp936 <- rawToChar(as.raw(c(0xb3, 0xc9, 0xb9, 0xa6)))
+  calls <- 0L
+  local_mocked_bindings(
+    kng_windows_principal = function() "DOMAIN\\User",
+    kng_run_process = function(command, args) {
+      calls <<- calls + 1L
+      if (calls == 1L) {
+        return(list(status = 0L, output = localized_cp936))
+      }
+      list(
+        status = 0L,
+        output = paste0(
+          path,
+          " domain\\user:(F)\n",
+          localized_cp936
+        )
+      )
+    },
+    .package = "knhanesget"
+  )
+
+  expect_false(validUTF8(localized_cp936))
+  expect_invisible(knhanesget:::kng_windows_acl_lockdown(path))
+})
+
+test_that("Windows ACL byte matching still rejects broad principals", {
+  path <- tempfile("private-state-")
+  writeLines("secret", path)
+  localized_cp936 <- rawToChar(as.raw(c(0xb3, 0xc9, 0xb9, 0xa6)))
+  calls <- 0L
+  local_mocked_bindings(
+    kng_windows_principal = function() "DOMAIN\\user",
+    kng_run_process = function(command, args) {
+      calls <<- calls + 1L
+      if (calls == 1L) {
+        return(list(status = 0L, output = localized_cp936))
+      }
+      list(
+        status = 0L,
+        output = paste0(
+          path,
+          " DOMAIN\\user:(F)\nS-1-5-11:(R)\n",
+          localized_cp936
+        )
+      )
+    },
+    .package = "knhanesget"
+  )
+
+  expect_error(
+    knhanesget:::kng_windows_acl_lockdown(path),
+    "Cannot verify private Windows ACLs"
+  )
+})
+
+test_that("Windows principal trimming accepts non-UTF-8 account bytes", {
+  account_cp936 <- rawToChar(as.raw(c(0xd3, 0xc3, 0xbb, 0xa7)))
+  principal <- paste0("  DOMAIN\\", account_cp936, "\r\n")
+  local_mocked_bindings(
+    kng_run_process = function(command, args) {
+      list(status = 0L, output = principal)
+    },
+    .package = "knhanesget"
+  )
+
+  actual <- knhanesget:::kng_windows_principal()
+  expect_identical(charToRaw(actual), charToRaw(paste0("DOMAIN\\", account_cp936)))
+})
+
 test_that("Windows ACL verification rejects broad principals", {
   path <- tempfile("private-state-")
   writeLines("secret", path)

@@ -187,13 +187,13 @@ kng_apply_private_permissions <- function(path, is_directory = FALSE) {
 kng_windows_principal <- function() {
   result <- kng_run_process("whoami", character())
   principal <- if (length(result$output)) {
-    trimws(result$output[[1L]])
+    kng_trim_ascii_whitespace_bytes(result$output[[1L]])
   } else {
     ""
   }
   if (result$status != 0L ||
       !nzchar(principal) ||
-      grepl("[\r\n]", principal) ||
+      grepl("[\r\n]", principal, useBytes = TRUE) ||
       nchar(principal, type = "bytes") > 256L) {
     stop(
       "Cannot determine the current Windows account for private key ACLs.",
@@ -201,6 +201,45 @@ kng_windows_principal <- function() {
     )
   }
   principal
+}
+
+kng_trim_ascii_whitespace_bytes <- function(value) {
+  if (!is.character(value) || length(value) != 1L || is.na(value)) {
+    return("")
+  }
+  bytes <- as.integer(charToRaw(value))
+  if (!length(bytes)) {
+    return("")
+  }
+  whitespace <- bytes %in% c(9L, 10L, 11L, 12L, 13L, 32L)
+  first <- match(FALSE, whitespace)
+  if (is.na(first)) {
+    return("")
+  }
+  last <- length(bytes) - match(FALSE, rev(whitespace)) + 1L
+  rawToChar(as.raw(bytes[first:last]))
+}
+
+kng_ascii_lower_bytes <- function(value) {
+  if (!is.character(value) || length(value) != 1L || is.na(value)) {
+    return("")
+  }
+  bytes <- as.integer(charToRaw(value))
+  uppercase <- bytes >= 65L & bytes <= 90L
+  bytes[uppercase] <- bytes[uppercase] + 32L
+  rawToChar(as.raw(bytes))
+}
+
+kng_fixed_bytes_match <- function(needle, haystack, ignore_ascii_case = FALSE) {
+  if (!is.character(needle) || length(needle) != 1L || is.na(needle) ||
+      !is.character(haystack) || length(haystack) != 1L || is.na(haystack)) {
+    return(FALSE)
+  }
+  if (ignore_ascii_case) {
+    needle <- kng_ascii_lower_bytes(needle)
+    haystack <- kng_ascii_lower_bytes(haystack)
+  }
+  grepl(needle, haystack, fixed = TRUE, useBytes = TRUE)
 }
 
 kng_windows_acl_lockdown <- function(path, is_directory = FALSE) {
@@ -228,9 +267,21 @@ kng_windows_acl_lockdown <- function(path, is_directory = FALSE) {
   }
   verification <- kng_run_process("icacls", path)
   acl <- paste(verification$output, collapse = "\n")
+  broad_principals <- c("S-1-1-0", "S-1-5-32-545", "S-1-5-11")
+  has_current_principal <- kng_fixed_bytes_match(
+    principal,
+    acl,
+    ignore_ascii_case = TRUE
+  )
+  has_broad_principal <- any(vapply(
+    broad_principals,
+    kng_fixed_bytes_match,
+    logical(1),
+    haystack = acl
+  ))
   if (verification$status != 0L ||
-      !grepl(tolower(principal), tolower(acl), fixed = TRUE) ||
-      grepl("S-1-1-0|S-1-5-32-545|S-1-5-11", acl, perl = TRUE)) {
+      !has_current_principal ||
+      has_broad_principal) {
     stop(
       "Cannot verify private Windows ACLs for knhanes state: ",
       path,
